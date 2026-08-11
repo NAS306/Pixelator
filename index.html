@@ -130,16 +130,100 @@ h1, .control-header h2 { margin-bottom: 0; font-family: var(--mono); font-size: 
   background-position: 0 0, 0 12px, 12px -12px, -12px 0;
 }
 
-#outputCanvas {
-  max-width: 100%;
+.preview-canvases {
+  --compare-position: 50%;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.preview-pane {
+  position: absolute;
+  inset: 0;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.result-pane { z-index: 0; }
+.original-pane {
+  z-index: 1;
+  clip-path: inset(0 calc(100% - var(--compare-position)) 0 0);
+}
+
+.preview-label {
+  position: absolute;
+  z-index: 2;
+  top: 8px;
+  left: 8px;
+  display: none;
+  padding: 3px 6px;
+  color: #fff;
+  background: var(--ink);
+  font: 9px/1 var(--mono);
+  letter-spacing: .08em;
+}
+.result-pane .preview-label { right: 8px; left: auto; }
+.preview-canvases.is-comparing .preview-label { display: block; }
+
+.compare-divider {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  bottom: 0;
+  left: var(--compare-position);
+  width: 2px;
+  transform: translateX(-1px);
+  background: var(--line);
+  pointer-events: none;
+}
+
+.compare-divider span {
+  position: absolute;
+  top: var(--compare-handle-top, 12px);
+  left: 50%;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  transform: translateX(-50%);
+  color: #fff;
+  background: var(--ink);
+  border: 2px solid #fff;
+  font: 700 16px/1 var(--mono);
+}
+
+.compare-slider {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: ew-resize;
+}
+
+#outputCanvas, #originalCanvas {
+  max-width: calc(100% - 16px);
   max-height: calc(100vh - 255px);
   width: auto;
   height: auto;
   object-fit: contain;
+}
+
+#outputCanvas {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   box-shadow: none;
 }
+
+#originalCanvas { image-rendering: auto; }
 
 .empty-state { max-width: 440px; text-align: center; padding: 44px 20px; }
 .empty-state h2 { margin: 22px 0 8px; font-size: 22px; }
@@ -194,6 +278,19 @@ h1, .control-header h2 { margin-bottom: 0; font-family: var(--mono); font-size: 
   cursor: pointer;
 }
 .icon-button:disabled { color: #898984; background: #d4d4ce; cursor: not-allowed; }
+.bar-button {
+  height: 32px;
+  padding: 0 9px;
+  color: var(--ink);
+  background: var(--panel-2);
+  border: 2px solid var(--line);
+  border-radius: 0;
+  white-space: nowrap;
+  font: 700 9px/1 var(--mono);
+  cursor: pointer;
+}
+.bar-button[aria-pressed="true"] { color: #fff; background: var(--ink); }
+.bar-button:disabled { color: #898984; background: #d4d4ce; border-color: #898984; cursor: not-allowed; }
 .timeline { min-width: 80px; flex: 1; accent-color: var(--accent); }
 .timecode, .render-stats { color: var(--muted); white-space: nowrap; font: 10px/1 var(--mono); }
 .render-stats { color: #8a4d00; margin-left: 5px; }
@@ -308,7 +405,7 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
   .file-meta span { font-size: 9px; }
 
   .canvas-stage { min-height: 0; padding: 18px; }
-  #outputCanvas { max-height: calc(100vh - 158px); }
+  #outputCanvas, #originalCanvas { max-height: calc(100vh - 158px); }
   .media-bar { min-height: 42px; padding: 4px 14px; gap: 10px; }
   .icon-button { flex-basis: 32px; height: 32px; }
 
@@ -344,14 +441,14 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
   .progress { margin: 0 16px 3px; }
 }
 
-@media (min-width: 981px) and (min-height: 900px) {
+@media (min-width: 981px) and (min-height: 920px) {
   .topbar { height: 64px; flex-basis: 64px; }
   .panel-heading, .control-header { min-height: 72px; height: 72px; padding: 14px 22px; }
   .panel-heading h1, .control-header h2 { font-size: 20px; }
   .eyebrow { margin-bottom: 4px; font-size: 10px; }
 
   .canvas-stage { padding: 28px; }
-  #outputCanvas { max-height: calc(100vh - 198px); }
+  #outputCanvas, #originalCanvas { max-height: calc(100vh - 198px); }
   .media-bar { min-height: 50px; padding: 7px 16px; gap: 12px; }
   .icon-button { flex-basis: 36px; height: 36px; }
 
@@ -388,7 +485,7 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
   .control-panel { border-left: 0; border-top: 2px solid var(--line); }
   .control-header { position: static; }
   .canvas-stage { min-height: 480px; }
-  #outputCanvas { max-height: 58vh; }
+  #outputCanvas, #originalCanvas { max-height: 58vh; }
 }
 
 @media (max-width: 620px) {
@@ -434,7 +531,20 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
 
         <div class="canvas-stage" id="dropZone">
           <div class="checkerboard" aria-hidden="true"></div>
-          <canvas id="outputCanvas" aria-label="픽셀화 결과" hidden></canvas>
+          <div class="preview-canvases" id="previewCanvases" hidden>
+            <div class="preview-pane original-pane" id="originalPane" hidden>
+              <span class="preview-label">ORIGINAL</span>
+              <canvas id="originalCanvas" aria-label="원본 미디어" hidden></canvas>
+            </div>
+            <div class="preview-pane result-pane">
+              <span class="preview-label">RESULT</span>
+              <canvas id="outputCanvas" aria-label="픽셀화 결과" hidden></canvas>
+            </div>
+            <div class="compare-divider" id="compareDivider" aria-hidden="true" hidden>
+              <span>↔</span>
+            </div>
+            <input class="compare-slider" id="compareSlider" type="range" min="0" max="100" value="50" aria-label="원본과 결과 분할 위치" hidden>
+          </div>
           <div class="empty-state" id="emptyState">
             <div class="empty-icon" aria-hidden="true">
               <span></span><span></span><span></span><span></span>
@@ -453,8 +563,9 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
           <button class="icon-button" id="playButton" type="button" aria-label="재생" disabled>
             <span id="playIcon" aria-hidden="true">▶</span>
           </button>
-          <input id="timeline" class="timeline" type="range" min="0" max="1000" value="0" aria-label="영상 재생 위치" disabled>
+          <input id="timeline" class="timeline" type="range" min="0" max="1000" value="0" aria-label="미디어 재생 위치" disabled>
           <span class="timecode" id="timecode">00:00 / 00:00</span>
+          <button class="bar-button" id="compareButton" type="button" aria-pressed="false" disabled>원본 비교</button>
           <span class="render-stats" id="renderStats">— PX</span>
         </div>
       </section>
@@ -590,7 +701,7 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
                   <option value="30">30 FPS</option>
                 </select>
               </label>
-              <p class="field-help">GIF와 영상의 실제 길이만큼 처리합니다. 오디오는 포함하지 않습니다.</p>
+              <p class="field-help">GIF는 빠르게 인코딩하며, 영상은 실제 길이만큼 녹화합니다. 오디오는 포함하지 않습니다.</p>
             </section>
           </div>
         </fieldset>
@@ -1402,8 +1513,9 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
     };
   }
 
-  class GifPlayer {
+  class GifPlayer extends EventTarget {
     constructor(decoded) {
+      super();
       this.width = decoded.width;
       this.height = decoded.height;
       this.frames = decoded.frames;
@@ -1417,6 +1529,12 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       this.context = this.canvas.getContext("2d", { alpha: true });
       this.imageData = this.context.createImageData(this.width, this.height);
       this.screen = new Uint8ClampedArray(this.width * this.height * 4);
+      this.frameStarts = [];
+      let elapsedMs = 0;
+      for (const frame of this.frames) {
+        this.frameStarts.push(elapsedMs / 1000);
+        elapsedMs += frame.delayMs;
+      }
       this.currentIndex = 0;
       this.previousFrame = null;
       this.previousRestore = null;
@@ -1456,7 +1574,7 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       this.previousRestore = null;
     }
 
-    renderFrame(index) {
+    renderFrame(index, notify = true) {
       if (index === 0) this.resetScreen();
       else if (this.previousFrame) {
         if (this.previousFrame.disposal === 2) this.clearFrameArea(this.previousFrame);
@@ -1484,6 +1602,32 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       this.currentIndex = index;
       this.previousFrame = frame;
       this.previousRestore = restore;
+      if (notify) this.dispatchEvent(new CustomEvent("framechange", { detail: this.timeData() }));
+    }
+
+    timeData() {
+      return {
+        current: this.frameStarts[this.currentIndex] || 0,
+        duration: this.duration,
+        frameIndex: this.currentIndex,
+        frameCount: this.frameCount
+      };
+    }
+
+    seek(seconds) {
+      const wasPlaying = this.playing;
+      this.pause();
+      const target = Math.max(0, Math.min(Math.max(0, this.duration - 0.000001), Number(seconds) || 0));
+      let targetIndex = 0;
+      for (let index = 1; index < this.frameStarts.length; index += 1) {
+        if (this.frameStarts[index] > target) break;
+        targetIndex = index;
+      }
+      this.renderFrame(0, targetIndex === 0);
+      for (let index = 1; index <= targetIndex; index += 1) {
+        this.renderFrame(index, index === targetIndex);
+      }
+      if (wasPlaying) this.play();
     }
 
     scheduleNext() {
@@ -1518,6 +1662,7 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       this.canvas.width = 0;
       this.canvas.height = 0;
       this.frames = [];
+      this.frameStarts = [];
       this.screen = new Uint8ClampedArray(0);
     }
   }
@@ -1589,6 +1734,10 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
         frameCount: this.gifPlayer.frameCount,
         hasTransparency: this.gifPlayer.hasTransparency
       };
+      this.gifPlayer.addEventListener("framechange", (event) => {
+        emit(this, "framechange", event.detail);
+        emit(this, "timeupdate", event.detail);
+      });
       this.gifPlayer.play();
       emit(this, "loaded", this.info);
       return this.info;
@@ -1653,7 +1802,9 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
     isReady() { return Boolean(this.element && this.info); }
 
     timeData() {
-      if (!this.info || this.info.kind !== "video") return { current: 0, duration: 0 };
+      if (!this.info) return { current: 0, duration: 0 };
+      if (this.info.kind === "gif") return this.gifPlayer.timeData();
+      if (this.info.kind !== "video") return { current: 0, duration: 0 };
       return { current: this.element.currentTime || 0, duration: this.info.duration || 0 };
     }
 
@@ -1680,19 +1831,44 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
     toggle() { return this.playing ? (this.pause(), Promise.resolve()) : this.play(); }
 
     seek(ratio) {
-      if (!this.info || this.info.kind !== "video" || !this.info.duration) return;
-      this.element.currentTime = Math.max(0, Math.min(1, ratio)) * this.info.duration;
+      if (!this.info || !this.info.dynamic || !this.info.duration) return;
+      const seconds = Math.max(0, Math.min(1, ratio)) * this.info.duration;
+      if (this.info.kind === "gif") this.gifPlayer.seek(seconds);
+      else this.element.currentTime = seconds;
     }
 
     playbackSnapshot() {
       return {
         playing: this.playing,
-        currentTime: this.info && this.info.kind === "video" ? this.element.currentTime || 0 : 0
+        currentTime: this.timeData().current
       };
     }
 
+    gifExportData() {
+      if (!this.info || this.info.kind !== "gif") return null;
+      return {
+        frameStarts: this.gifPlayer.frameStarts.slice(),
+        frameCount: this.gifPlayer.frameCount,
+        duration: this.gifPlayer.duration
+      };
+    }
+
+    renderGifFrameForExport(index) {
+      if (!this.info || this.info.kind !== "gif") return;
+      const target = Math.max(0, Math.min(this.gifPlayer.frameCount - 1, Math.round(index)));
+      if (target === 0 || this.gifPlayer.currentIndex > target) this.gifPlayer.renderFrame(0, target === 0);
+      while (this.gifPlayer.currentIndex < target) {
+        const next = this.gifPlayer.currentIndex + 1;
+        this.gifPlayer.renderFrame(next, next === target);
+      }
+    }
+
     seekTo(seconds) {
-      if (!this.info || this.info.kind !== "video") return Promise.resolve();
+      if (!this.info || !this.info.dynamic) return Promise.resolve();
+      if (this.info.kind === "gif") {
+        this.gifPlayer.seek(seconds);
+        return Promise.resolve();
+      }
       const video = this.element;
       const target = Math.max(0, Math.min(this.info.duration, Number(seconds) || 0));
       if (Math.abs((video.currentTime || 0) - target) < 0.01) {
@@ -1720,7 +1896,6 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       if (this.info.kind === "video") await this.seekTo(0);
       else {
         this.gifPlayer.restart();
-        emit(this, "framechange", { current: 0, duration: this.info.duration });
       }
     }
 
@@ -1746,7 +1921,7 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
     async restorePlayback(snapshot) {
       if (!snapshot || !this.info) return;
       this.pause();
-      if (this.info.kind === "video") await this.seekTo(snapshot.currentTime);
+      if (this.info.dynamic) await this.seekTo(snapshot.currentTime);
       if (snapshot.playing) await this.play();
     }
   }
@@ -1759,10 +1934,12 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
   "use strict";
 
   class PixelRenderer extends EventTarget {
-    constructor(outputCanvas, media, state) {
+    constructor(outputCanvas, originalCanvas, media, state) {
       super();
       this.canvas = outputCanvas;
       this.context = outputCanvas.getContext("2d", { alpha: true });
+      this.originalCanvas = originalCanvas;
+      this.originalContext = originalCanvas.getContext("2d", { alpha: true });
       this.workCanvas = document.createElement("canvas");
       this.workContext = this.workCanvas.getContext("2d", { alpha: true, willReadFrequently: true });
       this.media = media;
@@ -1799,6 +1976,28 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       if (this.transparencyState === hasTransparency) return;
       this.transparencyState = hasTransparency;
       this.dispatchEvent(new CustomEvent("transparencychange", { detail: { hasTransparency } }));
+    }
+
+    renderOriginal(source, outputWidth, outputHeight, baseWidth, baseHeight, padding) {
+      if (this.originalCanvas.hidden) return;
+      const maxPreviewDimension = 2048;
+      const ratio = Math.max(1, Math.max(outputWidth, outputHeight) / maxPreviewDimension);
+      const width = Math.max(1, Math.round(outputWidth / ratio));
+      const height = Math.max(1, Math.round(outputHeight / ratio));
+      if (this.originalCanvas.width !== width || this.originalCanvas.height !== height) {
+        this.originalCanvas.width = width;
+        this.originalCanvas.height = height;
+      }
+      this.originalContext.clearRect(0, 0, width, height);
+      this.originalContext.imageSmoothingEnabled = true;
+      this.originalContext.imageSmoothingQuality = "high";
+      this.originalContext.drawImage(
+        source,
+        padding / ratio,
+        padding / ratio,
+        baseWidth / ratio,
+        baseHeight / ratio
+      );
     }
 
     tick(timestamp) {
@@ -1888,6 +2087,7 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       const baseHeight = lowHeight * scale;
       const outputWidth = baseWidth + outlineThickness * 2;
       const outputHeight = baseHeight + outlineThickness * 2;
+      this.renderOriginal(source, outputWidth, outputHeight, baseWidth, baseHeight, outlineThickness);
 
       if (this.canvas.width !== outputWidth || this.canvas.height !== outputHeight) {
         this.canvas.width = outputWidth;
@@ -1915,6 +2115,237 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
   P.PixelRenderer = PixelRenderer;
 })(window.Pixelator = window.Pixelator || {});
 
+// ---- webm-muxer.js ----
+(function (P) {
+  "use strict";
+
+  const textEncoder = new TextEncoder();
+
+  function concat(parts) {
+    const length = parts.reduce((total, part) => total + part.length, 0);
+    const output = new Uint8Array(length);
+    let offset = 0;
+    for (const part of parts) {
+      output.set(part, offset);
+      offset += part.length;
+    }
+    return output;
+  }
+
+  function hexBytes(hex) {
+    const clean = hex.replace(/\s/g, "");
+    const bytes = new Uint8Array(clean.length / 2);
+    for (let index = 0; index < bytes.length; index += 1) {
+      bytes[index] = Number.parseInt(clean.slice(index * 2, index * 2 + 2), 16);
+    }
+    return bytes;
+  }
+
+  function encodeSize(value) {
+    const numeric = BigInt(value);
+    let length = 1;
+    while (length < 8 && numeric >= (1n << BigInt(7 * length)) - 1n) length += 1;
+    const output = new Uint8Array(length);
+    let remaining = numeric;
+    for (let index = length - 1; index >= 0; index -= 1) {
+      output[index] = Number(remaining & 255n);
+      remaining >>= 8n;
+    }
+    output[0] |= 1 << (8 - length);
+    return output;
+  }
+
+  function unsigned(value) {
+    let numeric = BigInt(Math.max(0, Math.round(Number(value) || 0)));
+    const bytes = [];
+    do {
+      bytes.unshift(Number(numeric & 255n));
+      numeric >>= 8n;
+    } while (numeric > 0n);
+    return new Uint8Array(bytes);
+  }
+
+  function float64(value) {
+    const buffer = new ArrayBuffer(8);
+    new DataView(buffer).setFloat64(0, Number(value), false);
+    return new Uint8Array(buffer);
+  }
+
+  function element(id, data) {
+    return concat([hexBytes(id), encodeSize(data.length), data]);
+  }
+
+  function master(id, children) {
+    return element(id, concat(children));
+  }
+
+  function text(id, value) { return element(id, textEncoder.encode(value)); }
+  function integer(id, value) { return element(id, unsigned(value)); }
+
+  function simpleBlock(chunk, clusterTimestampMs) {
+    const timestampMs = Math.round(chunk.timestamp / 1000);
+    const relative = timestampMs - clusterTimestampMs;
+    const header = new Uint8Array(4);
+    header[0] = 0x81;
+    header[1] = (relative >> 8) & 255;
+    header[2] = relative & 255;
+    header[3] = chunk.type === "key" ? 0x80 : 0;
+    return element("A3", concat([header, chunk.data]));
+  }
+
+  function buildClusters(chunks) {
+    const clusters = [];
+    let clusterTimestamp = 0;
+    let blocks = [];
+    const flush = () => {
+      if (!blocks.length) return;
+      clusters.push(master("1F43B675", [integer("E7", clusterTimestamp), ...blocks]));
+      blocks = [];
+    };
+
+    chunks.forEach((chunk, index) => {
+      const timestampMs = Math.round(chunk.timestamp / 1000);
+      const relative = timestampMs - clusterTimestamp;
+      if (index === 0 || relative > 30000 || (chunk.type === "key" && relative >= 5000)) {
+        flush();
+        clusterTimestamp = timestampMs;
+      }
+      blocks.push(simpleBlock(chunk, clusterTimestamp));
+    });
+    flush();
+    return clusters;
+  }
+
+  function muxWebm(chunks, options) {
+    if (!chunks.length) throw new Error("인코딩된 GIF 프레임이 없습니다.");
+    const codecId = options.codecId === "V_VP9" ? "V_VP9" : "V_VP8";
+    const ebml = master("1A45DFA3", [
+      integer("4286", 1),
+      integer("42F7", 1),
+      integer("42F2", 4),
+      integer("42F3", 8),
+      text("4282", "webm"),
+      integer("4287", 4),
+      integer("4285", 2)
+    ]);
+    const info = master("1549A966", [
+      integer("2AD7B1", 1000000),
+      element("4489", float64(options.durationSeconds * 1000)),
+      text("4D80", "Pixelator"),
+      text("5741", "Pixelator")
+    ]);
+    const video = master("E0", [
+      integer("B0", options.width),
+      integer("BA", options.height)
+    ]);
+    const trackEntry = master("AE", [
+      integer("D7", 1),
+      integer("73C5", 1),
+      integer("83", 1),
+      integer("23E383", Math.round(1000000000 / options.fps)),
+      text("86", codecId),
+      video
+    ]);
+    const tracks = master("1654AE6B", [trackEntry]);
+    const segment = master("18538067", [info, tracks, ...buildClusters(chunks)]);
+    return concat([ebml, segment]);
+  }
+
+  P.muxWebm = muxWebm;
+})(window.Pixelator = window.Pixelator || {});
+
+// ---- webcodecs-encoder.js ----
+(function (P) {
+  "use strict";
+
+  class WebmFrameEncoder {
+    constructor(config, codecId, fps) {
+      this.config = config;
+      this.codecId = codecId;
+      this.fps = fps;
+      this.chunks = [];
+      this.failure = null;
+      this.encoder = new VideoEncoder({
+        output: (chunk) => {
+          const data = new Uint8Array(chunk.byteLength);
+          chunk.copyTo(data);
+          this.chunks.push({
+            type: chunk.type,
+            timestamp: chunk.timestamp,
+            duration: chunk.duration,
+            data
+          });
+        },
+        error: (error) => { this.failure = error; }
+      });
+      this.encoder.configure(config);
+    }
+
+    static isAvailable() {
+      return typeof VideoEncoder !== "undefined" && typeof VideoFrame !== "undefined" && typeof P.muxWebm === "function";
+    }
+
+    static async create(width, height, fps) {
+      if (!WebmFrameEncoder.isAvailable()) throw new Error("WebCodecs 영상 인코더를 지원하지 않는 브라우저입니다.");
+      const candidates = [
+        { codec: "vp09.00.10.08", codecId: "V_VP9" },
+        { codec: "vp8", codecId: "V_VP8" }
+      ];
+      for (const candidate of candidates) {
+        const config = {
+          codec: candidate.codec,
+          width,
+          height,
+          bitrate: 6_000_000,
+          framerate: fps,
+          latencyMode: "quality",
+          alpha: "discard"
+        };
+        try {
+          const support = await VideoEncoder.isConfigSupported(config);
+          if (support.supported) return new WebmFrameEncoder(support.config || config, candidate.codecId, fps);
+        } catch (error) {
+          // Try the next codec.
+        }
+      }
+      throw new Error("이 브라우저에서 VP8·VP9 WebM 인코더를 사용할 수 없습니다.");
+    }
+
+    async encodeCanvas(canvas, timestamp, duration, keyFrame) {
+      if (this.failure) throw this.failure;
+      const frame = new VideoFrame(canvas, { timestamp, duration });
+      this.encoder.encode(frame, { keyFrame });
+      frame.close();
+      if (this.encoder.encodeQueueSize > 8) await this.encoder.flush();
+      if (this.failure) throw this.failure;
+    }
+
+    async finish(durationSeconds) {
+      await this.encoder.flush();
+      if (this.failure) throw this.failure;
+      this.chunks.sort((a, b) => a.timestamp - b.timestamp);
+      const bytes = P.muxWebm(this.chunks, {
+        codecId: this.codecId,
+        width: this.config.width,
+        height: this.config.height,
+        fps: this.fps,
+        durationSeconds
+      });
+      return {
+        blob: new Blob([bytes], { type: "video/webm" }),
+        codecId: this.codecId,
+        chunkCount: this.chunks.length
+      };
+    }
+
+    close() {
+      if (this.encoder.state !== "closed") this.encoder.close();
+    }
+  }
+
+  P.WebmFrameEncoder = WebmFrameEncoder;
+})(window.Pixelator = window.Pixelator || {});
+
 // ---- exporter.js ----
 (function (P) {
   "use strict";
@@ -1937,6 +2368,46 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  function createFocusPauseGate(onPause, onResume) {
+    let paused = false;
+    let waiters = [];
+    let resumeTask = Promise.resolve();
+    const pause = () => {
+      if (paused) return;
+      paused = true;
+      Promise.resolve(onPause?.()).catch(() => {});
+    };
+    const resume = () => {
+      if (!paused) return;
+      paused = false;
+      resumeTask = Promise.resolve(onResume?.()).catch(() => {}).finally(() => {
+        const pending = waiters;
+        waiters = [];
+        pending.forEach((resolve) => resolve());
+      });
+    };
+    const onVisibility = () => {
+      if (document.hidden) pause();
+      else if (document.hasFocus()) resume();
+    };
+    window.addEventListener("blur", pause);
+    window.addEventListener("focus", resume);
+    document.addEventListener("visibilitychange", onVisibility);
+    return {
+      wait() {
+        if (paused) return new Promise((resolve) => waiters.push(resolve));
+        return resumeTask;
+      },
+      dispose() {
+        window.removeEventListener("blur", pause);
+        window.removeEventListener("focus", resume);
+        document.removeEventListener("visibilitychange", onVisibility);
+        waiters.forEach((resolve) => resolve());
+        waiters = [];
+      }
+    };
+  }
+
   function savePng(canvas, sourceName) {
     return new Promise((resolve, reject) => {
       canvas.toBlob((blob) => {
@@ -1956,7 +2427,7 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
   }
 
   function recordWebm(canvas, sourceName, options) {
-    const { fps, durationSeconds, onProgress, completion, start } = options;
+    const { fps, durationSeconds, onProgress, completion, start, pauseSource, resumeSource, onSuspendChange } = options;
     if (!canvas.captureStream || typeof MediaRecorder === "undefined") {
       return Promise.reject(new Error("이 브라우저는 Canvas WebM 녹화를 지원하지 않습니다."));
     }
@@ -1976,7 +2447,9 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
 
       const startedAt = performance.now();
       let timer = 0;
-      let safetyTimer = 0;
+      let suspendedAt = 0;
+      let suspendedTotal = 0;
+      let isSuspended = false;
       const stop = () => {
         if (recorder.state !== "inactive") recorder.stop();
       };
@@ -1988,7 +2461,7 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       recorder.onerror = (event) => fail(event.error || new Error("녹화 중 오류가 발생했습니다."));
       recorder.onstop = () => {
         window.clearInterval(timer);
-        window.clearTimeout(safetyTimer);
+        focusGate.dispose();
         stream.getTracks().forEach((track) => track.stop());
         if (failure) {
           reject(failure);
@@ -2000,17 +2473,113 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
         resolve();
       };
       recorder.start(250);
+      const focusGate = createFocusPauseGate(
+        () => {
+          if (recorder.state !== "recording") return;
+          isSuspended = true;
+          suspendedAt = performance.now();
+          pauseSource?.();
+          recorder.pause();
+          onSuspendChange?.(true);
+        },
+        async () => {
+          if (!isSuspended) return;
+          await resumeSource?.();
+          if (recorder.state === "paused") recorder.resume();
+          suspendedTotal += performance.now() - suspendedAt;
+          isSuspended = false;
+          onSuspendChange?.(false);
+        }
+      );
       timer = window.setInterval(() => {
-        const ratio = Math.min(1, (performance.now() - startedAt) / (durationSeconds * 1000));
+        const currentPause = isSuspended ? performance.now() - suspendedAt : 0;
+        const activeElapsed = performance.now() - startedAt - suspendedTotal - currentPause;
+        const ratio = Math.min(1, activeElapsed / (durationSeconds * 1000));
         onProgress?.(ratio);
+        if (!completion && ratio >= 1) stop();
+        else if (completion && activeElapsed > durationSeconds * 1000 + 5000) fail(new Error("영상 종료를 기다리는 시간이 너무 깁니다."));
       }, 100);
-      safetyTimer = window.setTimeout(stop, durationSeconds * 1000 + (completion ? 5000 : 0));
       if (completion) Promise.resolve(completion).then(stop).catch(fail);
       if (start) Promise.resolve().then(start).catch(fail);
     });
   }
 
-  P.Exporter = { savePng, recordWebm };
+  P.Exporter = { safeBaseName, saveBlob, savePng, recordWebm, createFocusPauseGate };
+})(window.Pixelator = window.Pixelator || {});
+
+// ---- fast-gif-exporter.js ----
+(function (P) {
+  "use strict";
+
+  function canFastGifExport() {
+    return Boolean(P.WebmFrameEncoder && P.WebmFrameEncoder.isAvailable());
+  }
+
+  async function exportGifWebm(canvas, sourceName, options) {
+    if (!canFastGifExport()) throw new Error("빠른 GIF 내보내기를 지원하지 않는 브라우저입니다.");
+    const fps = Math.max(1, Math.round(options.fps));
+    const durationSeconds = Number(options.durationSeconds);
+    const width = canvas.width;
+    const height = canvas.height;
+    if (!width || !height || !durationSeconds) throw new Error("GIF 내보내기 크기 또는 길이가 올바르지 않습니다.");
+
+    const frameEncoder = await P.WebmFrameEncoder.create(width, height, fps);
+    let suspendedAt = 0;
+    let suspendedTotal = 0;
+    let suspended = false;
+    const startedAt = performance.now();
+    const focusGate = P.Exporter.createFocusPauseGate(
+      () => {
+        suspended = true;
+        suspendedAt = performance.now();
+        options.onSuspendChange?.(true);
+      },
+      () => {
+        suspendedTotal += performance.now() - suspendedAt;
+        suspended = false;
+        options.onSuspendChange?.(false);
+      }
+    );
+    try {
+      const outputFrameCount = Math.max(1, Math.ceil(durationSeconds * fps));
+      const frameStarts = options.frameStarts;
+      let sourceFrameIndex = -1;
+      for (let outputIndex = 0; outputIndex < outputFrameCount; outputIndex += 1) {
+        await focusGate.wait();
+        const seconds = Math.min(durationSeconds, outputIndex / fps);
+        let nextSourceIndex = 0;
+        while (nextSourceIndex + 1 < frameStarts.length && frameStarts[nextSourceIndex + 1] <= seconds + 0.000001) {
+          nextSourceIndex += 1;
+        }
+        if (nextSourceIndex !== sourceFrameIndex) {
+          options.renderFrame(nextSourceIndex);
+          sourceFrameIndex = nextSourceIndex;
+        } else {
+          options.renderCurrentFrame();
+        }
+
+        const timestamp = Math.round(outputIndex * 1_000_000 / fps);
+        const remaining = Math.max(0, durationSeconds * 1_000_000 - timestamp);
+        const frameDuration = Math.max(1, Math.min(Math.round(1_000_000 / fps), Math.round(remaining)));
+        await frameEncoder.encodeCanvas(canvas, timestamp, frameDuration, outputIndex % Math.max(1, fps * 2) === 0);
+        if (outputIndex % 4 === 3) await new Promise((resolve) => window.setTimeout(resolve, 0));
+        options.onProgress?.((outputIndex + 1) / outputFrameCount);
+      }
+      const result = await frameEncoder.finish(durationSeconds);
+      P.Exporter.saveBlob(
+        result.blob,
+        P.Exporter.safeBaseName(sourceName) + "-pixelated.webm"
+      );
+      const activeElapsed = performance.now() - startedAt - suspendedTotal - (suspended ? performance.now() - suspendedAt : 0);
+      return { elapsedSeconds: activeElapsed / 1000, codecId: result.codecId };
+    } finally {
+      focusGate.dispose();
+      frameEncoder.close();
+    }
+  }
+
+  P.Exporter.canFastGifExport = canFastGifExport;
+  P.Exporter.exportGifWebm = exportGifWebm;
 })(window.Pixelator = window.Pixelator || {});
 
 // ---- ui.js ----
@@ -2029,6 +2598,10 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
     const remainder = Math.floor(safe % 60);
     return String(minutes).padStart(2, "0") + ":" + String(remainder).padStart(2, "0");
   }
+  function formatTimelineTime(seconds, duration) {
+    const safe = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
+    return duration > 0 && duration < 10 ? safe.toFixed(2) + "s" : formatTime(safe);
+  }
 
   class PixelatorUI {
     constructor(state, media, renderer) {
@@ -2036,18 +2609,24 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       this.media = media;
       this.renderer = renderer;
       this.recording = false;
+      this.comparisonEnabled = false;
+      this.comparisonPosition = 50;
       this.refs = {
         fileInput: byId("fileInput"), dropZone: byId("dropZone"), dropOverlay: byId("dropOverlay"),
-        outputCanvas: byId("outputCanvas"), emptyState: byId("emptyState"), fileMeta: byId("fileMeta"),
+        previewCanvases: byId("previewCanvases"), originalPane: byId("originalPane"),
+        originalCanvas: byId("originalCanvas"), outputCanvas: byId("outputCanvas"),
+        emptyState: byId("emptyState"), fileMeta: byId("fileMeta"),
         fileName: byId("fileName"), fileDetails: byId("fileDetails"), playButton: byId("playButton"),
-        playIcon: byId("playIcon"), timeline: byId("timeline"), timecode: byId("timecode"),
+        playIcon: byId("playIcon"), timeline: byId("timeline"), timecode: byId("timecode"), compareButton: byId("compareButton"),
+        compareSlider: byId("compareSlider"), compareDivider: byId("compareDivider"),
         renderStats: byId("renderStats"), resolutionPreset: byId("resolutionPreset"),
         customWidth: byId("customWidth"), samplingMode: byId("samplingMode"), outputScale: byId("outputScale"),
         paletteSelect: byId("paletteSelect"), paletteStrip: byId("paletteStrip"), customPaletteBox: byId("customPaletteBox"),
         customPalette: byId("customPalette"), paletteHelp: byId("paletteHelp"), ditherMode: byId("ditherMode"),
         outlineSection: byId("outlineSection"), animationSection: byId("animationSection"),
         outlineColorMode: byId("outlineColorMode"), outlineColor: byId("outlineColor"),
-        outlineThickness: byId("outlineThickness"), renderFps: byId("renderFps"), downloadPng: byId("downloadPng"),
+        outlineThickness: byId("outlineThickness"), renderFps: byId("renderFps"),
+        downloadPng: byId("downloadPng"),
         recordWebm: byId("recordWebm"), resetSettings: byId("resetSettings"), settingsFieldset: byId("settingsFieldset"),
         statusMessage: byId("statusMessage"), recordProgress: byId("recordProgress"), recordProgressBar: byId("recordProgressBar")
       };
@@ -2084,7 +2663,15 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       });
       r.paletteSelect.addEventListener("change", () => this.updatePaletteUI());
       r.playButton.addEventListener("click", () => this.media.toggle().catch((error) => this.setStatus(error.message, "error")));
-      r.timeline.addEventListener("input", () => this.media.seek(Number(r.timeline.value) / 1000));
+      r.timeline.addEventListener("pointerdown", () => {
+        if (this.media.playing) this.media.pause();
+      });
+      r.timeline.addEventListener("input", () => {
+        if (this.media.playing) this.media.pause();
+        this.media.seek(Number(r.timeline.value) / 1000);
+      });
+      r.compareButton.addEventListener("click", () => this.setComparison(!this.comparisonEnabled));
+      r.compareSlider.addEventListener("input", () => this.updateComparisonPosition(Number(r.compareSlider.value)));
       r.downloadPng.addEventListener("click", () => this.downloadPng());
       r.recordWebm.addEventListener("click", () => this.recordWebm());
       r.resetSettings.addEventListener("click", () => this.state.resetConfig());
@@ -2102,6 +2689,7 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
         this.updateSectionNumbers();
       });
       this.renderer.addEventListener("rendererror", (event) => this.setStatus("렌더링 오류: " + event.detail.message, "error"));
+      window.addEventListener("resize", () => this.positionCompareHandle());
     }
 
     async handleFiles(fileList) {
@@ -2124,6 +2712,7 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
     onMediaLoaded(info) {
       const r = this.refs;
       r.emptyState.hidden = true;
+      r.previewCanvases.hidden = false;
       r.outputCanvas.hidden = false;
       r.fileMeta.hidden = false;
       r.fileName.textContent = info.name;
@@ -2132,13 +2721,15 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       r.downloadPng.disabled = false;
       r.recordWebm.disabled = !info.dynamic || !info.duration;
       r.playButton.disabled = !info.dynamic;
-      r.timeline.disabled = info.kind !== "video";
+      r.timeline.disabled = !info.dynamic;
+      r.compareButton.disabled = false;
       r.timeline.value = "0";
+      this.setComparison(this.comparisonEnabled);
       r.animationSection.hidden = !info.dynamic;
       r.outlineSection.hidden = info.hasTransparency !== true;
       this.updateSectionNumbers();
       this.updatePlayback(this.media.playing);
-      this.updateTimeline({ current: 0, duration: info.duration });
+      this.updateTimeline({ current: 0, duration: info.duration, frameIndex: 0, frameCount: info.frameCount });
       if (info.dynamic && !info.duration) this.setStatus("재생 길이를 읽지 못해 전체 WebM 녹화를 사용할 수 없습니다.", "error");
       else this.setStatus(info.kind === "image" ? "이미지 변환이 완료되었습니다." : "재생 프레임을 실시간으로 변환합니다.", "success");
       this.renderer.requestRender();
@@ -2150,6 +2741,15 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       if (P.getAdaptivePaletteSize(this.state.config.palette) && size.paletteColors.length) {
         this.paintPalette(size.paletteColors);
       }
+      window.requestAnimationFrame(() => this.positionCompareHandle());
+    }
+
+    positionCompareHandle() {
+      if (!this.media.info || this.refs.outputCanvas.hidden) return;
+      const previewRect = this.refs.previewCanvases.getBoundingClientRect();
+      const canvasRect = this.refs.outputCanvas.getBoundingClientRect();
+      const top = Math.max(8, Math.round(canvasRect.top - previewRect.top + 8));
+      this.refs.previewCanvases.style.setProperty("--compare-handle-top", top + "px");
     }
 
     readConfig() {
@@ -2235,10 +2835,31 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       this.refs.playButton.setAttribute("aria-label", playing ? "일시정지" : "재생");
     }
 
+    setComparison(enabled) {
+      const r = this.refs;
+      this.comparisonEnabled = Boolean(enabled && this.media.info);
+      r.previewCanvases.classList.toggle("is-comparing", this.comparisonEnabled);
+      r.originalPane.hidden = !this.comparisonEnabled;
+      r.originalCanvas.hidden = !this.comparisonEnabled;
+      r.compareSlider.hidden = !this.comparisonEnabled;
+      r.compareDivider.hidden = !this.comparisonEnabled;
+      r.compareButton.setAttribute("aria-pressed", String(this.comparisonEnabled));
+      r.compareButton.textContent = this.comparisonEnabled ? "비교 종료" : "원본 비교";
+      this.updateComparisonPosition(this.comparisonPosition);
+      this.renderer.requestRender();
+    }
+
+    updateComparisonPosition(position) {
+      this.comparisonPosition = Math.max(0, Math.min(100, Number(position) || 0));
+      this.refs.compareSlider.value = String(this.comparisonPosition);
+      this.refs.previewCanvases.style.setProperty("--compare-position", this.comparisonPosition + "%");
+    }
+
     updateTimeline(time) {
       const duration = time.duration || 0;
       this.refs.timeline.value = duration ? String(Math.round((time.current / duration) * 1000)) : "0";
-      this.refs.timecode.textContent = formatTime(time.current) + " / " + formatTime(duration);
+      const frameText = time.frameCount ? " · " + (time.frameIndex + 1) + "/" + time.frameCount + "F" : "";
+      this.refs.timecode.textContent = formatTimelineTime(time.current, duration) + " / " + formatTimelineTime(duration, duration) + frameText;
     }
 
     setStatus(message, kind) {
@@ -2280,23 +2901,60 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       r.downloadPng.disabled = true;
       r.recordProgress.hidden = false;
       r.recordProgressBar.style.width = "0%";
-      this.setStatus("전체 " + this.formatDuration(duration) + "를 녹화 중… 완료까지 같은 시간이 걸립니다.");
+      const wantsFastGif = this.media.info.kind === "gif" && P.Exporter.canFastGifExport();
+      const setExportStatus = (paused, fast) => {
+        if (paused) this.setStatus("창이 비활성화되어 내보내기를 일시 중지했습니다.");
+        else if (fast) this.setStatus("GIF 빠른 내보내기를 진행 중입니다.");
+        else this.setStatus("녹화를 재개했습니다. 창이 활성화된 동안만 진행됩니다.");
+      };
       try {
         await this.media.prepareFullRecording();
         this.renderer.render();
-        const completion = this.media.info.kind === "video" ? this.media.waitForVideoEnd() : null;
-        await P.Exporter.recordWebm(
-          r.outputCanvas,
-          this.media.info.name,
-          {
-            fps: this.state.config.fps,
-            durationSeconds: duration,
-            completion,
-            start: () => this.media.play(),
-            onProgress: (ratio) => { r.recordProgressBar.style.width = Math.round(ratio * 100) + "%"; }
+        let fastResult = null;
+        if (wantsFastGif) {
+          this.setStatus("GIF 빠른 내보내기를 진행 중입니다.");
+          try {
+            const gifData = this.media.gifExportData();
+            fastResult = await P.Exporter.exportGifWebm(r.outputCanvas, this.media.info.name, {
+              fps: this.state.config.fps,
+              durationSeconds: duration,
+              frameStarts: gifData.frameStarts,
+              renderFrame: (index) => {
+                this.media.renderGifFrameForExport(index);
+                this.renderer.render();
+              },
+              renderCurrentFrame: () => this.renderer.render(),
+              onProgress: (ratio) => { r.recordProgressBar.style.width = Math.round(ratio * 100) + "%"; },
+              onSuspendChange: (paused) => setExportStatus(paused, true)
+            });
+          } catch (fastError) {
+            await this.media.prepareFullRecording();
+            this.renderer.render();
+            this.setStatus("빠른 인코더를 사용할 수 없어 1배속 녹화로 전환했습니다.");
           }
-        );
-        this.setStatus("WebM 파일을 저장했습니다.", "success");
+        }
+        if (!fastResult) {
+          if (!wantsFastGif) this.setStatus("전체 " + this.formatDuration(duration) + "를 녹화 중… 완료까지 같은 시간이 걸립니다.");
+          const completion = this.media.info.kind === "video" ? this.media.waitForVideoEnd() : null;
+          await P.Exporter.recordWebm(
+            r.outputCanvas,
+            this.media.info.name,
+            {
+              fps: this.state.config.fps,
+              durationSeconds: duration,
+              completion,
+              start: () => this.media.play(),
+              pauseSource: () => this.media.pause(),
+              resumeSource: () => this.media.play(),
+              onSuspendChange: (paused) => setExportStatus(paused, false),
+              onProgress: (ratio) => { r.recordProgressBar.style.width = Math.round(ratio * 100) + "%"; }
+            }
+          );
+        }
+        const speedText = fastResult && fastResult.elapsedSeconds > 0
+          ? " · " + Math.max(1, Math.round(duration / fastResult.elapsedSeconds * 10) / 10) + "배속 처리"
+          : "";
+        this.setStatus("WebM 파일을 저장했습니다." + speedText, "success");
       } catch (error) {
         this.setStatus(error.message || "녹화하지 못했습니다.", "error");
       } finally {
@@ -2325,7 +2983,12 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
   function boot() {
     const state = new P.AppState();
     const media = new P.MediaController();
-    const renderer = new P.PixelRenderer(document.getElementById("outputCanvas"), media, state);
+    const renderer = new P.PixelRenderer(
+      document.getElementById("outputCanvas"),
+      document.getElementById("originalCanvas"),
+      media,
+      state
+    );
     new P.PixelatorUI(state, media, renderer);
     renderer.start();
 
