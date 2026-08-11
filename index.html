@@ -26,6 +26,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 
 html { min-width: 320px; background: var(--bg); }
 
@@ -137,7 +138,6 @@ h1, .control-header h2 { margin-bottom: 0; font-family: var(--mono); font-size: 
   object-fit: contain;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  outline: 2px solid #1b1b1b;
   box-shadow: none;
 }
 
@@ -212,7 +212,7 @@ fieldset:disabled { opacity: .55; }
 .field-spaced { margin-top: 18px; }
 .field-help { margin: 7px 0 0; color: #666661; font-size: 10px; }
 
-select, input[type="number"], textarea {
+select, input[type="number"], input[type="color"], textarea {
   min-width: 0;
   width: 100%;
   color: var(--ink);
@@ -223,6 +223,9 @@ select, input[type="number"], textarea {
   transition: none;
 }
 select, input[type="number"] { height: 40px; padding: 0 11px; font-size: 12px; }
+input[type="color"] { height: 40px; padding: 3px; cursor: pointer; }
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: 0; }
 textarea { resize: vertical; min-height: 68px; padding: 10px 11px; font: 11px/1.6 var(--mono); }
 select:focus, input:focus, textarea:focus { border-color: var(--accent); box-shadow: none; outline: 1px dashed var(--ink); outline-offset: 2px; }
 select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-color: #8a8a84; }
@@ -234,6 +237,8 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
 .number-unit span { position: absolute; right: 10px; top: 14px; color: #666661; font: 9px/1 var(--mono); pointer-events: none; }
 .two-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 18px; }
 .two-columns .field-label { margin-bottom: 7px; }
+.outline-controls { display: grid; grid-template-columns: minmax(0, 1fr) 44px 68px; gap: 6px; }
+.outline-controls > * { min-width: 0; }
 
 .palette-strip { display: flex; height: 28px; margin-top: 10px; overflow: hidden; border: 2px solid var(--line); border-radius: 0; background: linear-gradient(90deg, #111 0 12.5%, #333 12.5% 25%, #555 25% 37.5%, #777 37.5% 50%, #999 50% 62.5%, #bbb 62.5% 75%, #ddd 75% 87.5%, #fff 87.5%); }
 .palette-strip span { min-width: 3px; flex: 1; }
@@ -312,6 +317,9 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
   .control-header .button { min-height: 30px; }
   .control-section { padding: 8px 16px; }
   .compact-section { padding-bottom: 7px; }
+  .conditional-sections { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+  .conditional-sections .control-section { padding-left: 10px; padding-right: 10px; }
+  .conditional-sections .control-section:not([hidden]) + .control-section:not([hidden]) { border-left: 2px solid var(--line); }
   .section-title { gap: 7px; margin-bottom: 6px; }
   .section-title h3 { font-size: 12px; }
   .field-label { margin-bottom: 2px; font-size: 10px; }
@@ -319,6 +327,7 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
   .field-help { margin-top: 2px; font-size: 9px; line-height: 1.3; }
 
   select, input[type="number"] { height: 32px; padding: 0 9px; font-size: 11px; }
+  input[type="color"] { height: 32px; }
   textarea { min-height: 44px; padding: 6px 9px; }
   .input-row { grid-template-columns: minmax(0, 1fr) 112px; gap: 7px; }
   .number-unit span { top: 11px; }
@@ -349,6 +358,7 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
   .control-header .button { min-height: 34px; }
   .control-section { padding: 16px 20px; }
   .compact-section { padding-bottom: 14px; }
+  .conditional-sections .control-section { padding-left: 12px; padding-right: 12px; }
   .section-title { gap: 9px; margin-bottom: 14px; }
   .section-title h3 { font-size: 13px; }
   .field-label { margin-bottom: 5px; font-size: 11px; }
@@ -356,6 +366,7 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
   .field-help { margin-top: 5px; font-size: 10px; line-height: 1.4; }
 
   select, input[type="number"] { height: 38px; padding: 0 11px; font-size: 12px; }
+  input[type="color"] { height: 38px; }
   textarea { min-height: 60px; padding: 8px 10px; }
   .input-row { grid-template-columns: minmax(0, 1fr) 126px; gap: 9px; }
   .number-unit span { top: 13px; }
@@ -537,21 +548,51 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
             </select>
           </section>
 
-          <section class="control-section compact-section">
-            <div class="section-title">
-              <span class="step-number">03</span>
-              <h3>애니메이션</h3>
-            </div>
-            <label>
-              <span class="field-label">처리 FPS</span>
-              <select id="renderFps">
-                <option value="12">12 FPS</option>
-                <option value="24" selected>24 FPS</option>
-                <option value="30">30 FPS</option>
-              </select>
-            </label>
-            <p class="field-help">GIF는 한 반복 주기, 영상은 전체 길이를 처음부터 녹화합니다. 실제 길이만큼 시간이 걸리며 오디오는 포함하지 않습니다.</p>
-          </section>
+          <div class="conditional-sections">
+            <section class="control-section compact-section" id="outlineSection" hidden>
+              <div class="section-title">
+                <span class="step-number">03</span>
+                <h3>테두리</h3>
+              </div>
+              <div class="outline-controls">
+                <label>
+                  <span class="field-label">색상</span>
+                  <select id="outlineColorMode">
+                    <option value="theme" selected>테마 자동</option>
+                    <option value="custom">직접 선택</option>
+                  </select>
+                </label>
+                <label>
+                  <span class="field-label">직접 선택</span>
+                  <input id="outlineColor" type="color" value="#151515" aria-label="테두리 색상" disabled>
+                </label>
+                <label>
+                  <span class="field-label">두께</span>
+                  <div class="number-unit">
+                    <input id="outlineThickness" type="number" min="0" max="8" step="1" value="1">
+                    <span>PX</span>
+                  </div>
+                </label>
+              </div>
+              <p class="field-help">투명 영역과 맞닿은 바깥쪽에 적용합니다. 0은 테두리 없음입니다.</p>
+            </section>
+
+            <section class="control-section compact-section" id="animationSection" hidden>
+              <div class="section-title">
+                <span class="step-number">03</span>
+                <h3>애니메이션</h3>
+              </div>
+              <label>
+                <span class="field-label">처리 FPS</span>
+                <select id="renderFps">
+                  <option value="12">12 FPS</option>
+                  <option value="24" selected>24 FPS</option>
+                  <option value="30">30 FPS</option>
+                </select>
+              </label>
+              <p class="field-help">GIF와 영상의 실제 길이만큼 처리합니다. 오디오는 포함하지 않습니다.</p>
+            </section>
+          </div>
         </fieldset>
 
         <div class="actions">
@@ -584,6 +625,9 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
     palette: "original",
     customPalette: "#17111A #F7F1E3 #FF5252 #33D9B2 #34ACE0",
     dither: "auto",
+    outlineColorMode: "theme",
+    outlineColor: "#151515",
+    outlineThickness: 1,
     fps: 24
   });
 
@@ -662,6 +706,7 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
   }
 
   P.PALETTES = PALETTES;
+  P.hexToRgb = hexToRgb;
   P.parseCustomPalette = parseCustomPalette;
   P.getPalette = getPalette;
   P.getPaletteHex = getPaletteHex;
@@ -696,6 +741,111 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
 
   P.rgbToOklab = rgbToOklab;
   P.rgbToHex = rgbToHex;
+})(window.Pixelator = window.Pixelator || {});
+
+// ---- outline.js ----
+(function (P) {
+  "use strict";
+
+  function hasTransparency(imageData) {
+    const data = imageData.data;
+    for (let index = 3; index < data.length; index += 4) {
+      if (data[index] < 255) return true;
+    }
+    return false;
+  }
+
+  function buildOutlinedPixels(imageData, width, height, color, requestedThickness) {
+    const thickness = Math.max(0, Math.min(8, Math.round(Number(requestedThickness) || 0)));
+    if (!thickness) {
+      return { data: new Uint8ClampedArray(imageData.data), width, height };
+    }
+
+    const outputWidth = width + thickness * 2;
+    const outputHeight = height + thickness * 2;
+    const sourceMask = new Uint8Array(outputWidth * outputHeight);
+    let expandedMask = new Uint8Array(outputWidth * outputHeight);
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const sourceIndex = (y * width + x) * 4;
+        const targetPixel = (y + thickness) * outputWidth + x + thickness;
+        if (imageData.data[sourceIndex + 3] > 0) {
+          sourceMask[targetPixel] = 1;
+          expandedMask[targetPixel] = 1;
+        }
+      }
+    }
+
+    for (let pass = 0; pass < thickness; pass += 1) {
+      const nextMask = expandedMask.slice();
+      for (let y = 0; y < outputHeight; y += 1) {
+        for (let x = 0; x < outputWidth; x += 1) {
+          const pixel = y * outputWidth + x;
+          if (!expandedMask[pixel]) continue;
+          for (let offsetY = -1; offsetY <= 1; offsetY += 1) {
+            const nextY = y + offsetY;
+            if (nextY < 0 || nextY >= outputHeight) continue;
+            for (let offsetX = -1; offsetX <= 1; offsetX += 1) {
+              const nextX = x + offsetX;
+              if (nextX >= 0 && nextX < outputWidth) nextMask[nextY * outputWidth + nextX] = 1;
+            }
+          }
+        }
+      }
+      expandedMask = nextMask;
+    }
+
+    const output = new Uint8ClampedArray(outputWidth * outputHeight * 4);
+    for (let pixel = 0; pixel < expandedMask.length; pixel += 1) {
+      if (!expandedMask[pixel] || sourceMask[pixel]) continue;
+      const targetIndex = pixel * 4;
+      output[targetIndex] = color[0];
+      output[targetIndex + 1] = color[1];
+      output[targetIndex + 2] = color[2];
+      output[targetIndex + 3] = 255;
+    }
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const sourceIndex = (y * width + x) * 4;
+        const targetIndex = ((y + thickness) * outputWidth + x + thickness) * 4;
+        const alpha = imageData.data[sourceIndex + 3] / 255;
+        if (!alpha) continue;
+        const inverseAlpha = 1 - alpha;
+        output[targetIndex] = Math.round(imageData.data[sourceIndex] * alpha + color[0] * inverseAlpha);
+        output[targetIndex + 1] = Math.round(imageData.data[sourceIndex + 1] * alpha + color[1] * inverseAlpha);
+        output[targetIndex + 2] = Math.round(imageData.data[sourceIndex + 2] * alpha + color[2] * inverseAlpha);
+        output[targetIndex + 3] = 255;
+      }
+    }
+
+    return { data: output, width: outputWidth, height: outputHeight };
+  }
+
+  function drawPixelOutline(context, source, width, height, color, requestedThickness) {
+    const thickness = Math.max(0, Math.min(8, Math.round(Number(requestedThickness) || 0)));
+    context.save();
+    context.imageSmoothingEnabled = false;
+    context.globalCompositeOperation = "source-over";
+
+    for (let offsetY = -thickness; offsetY <= thickness; offsetY += 1) {
+      for (let offsetX = -thickness; offsetX <= thickness; offsetX += 1) {
+        context.drawImage(source, thickness + offsetX, thickness + offsetY, width, height);
+      }
+    }
+
+    context.globalCompositeOperation = "source-in";
+    context.fillStyle = "rgb(" + color[0] + ", " + color[1] + ", " + color[2] + ")";
+    context.fillRect(0, 0, width + thickness * 2, height + thickness * 2);
+    context.globalCompositeOperation = "source-over";
+    context.drawImage(source, thickness, thickness, width, height);
+    context.restore();
+  }
+
+  P.hasTransparency = hasTransparency;
+  P.buildOutlinedPixels = buildOutlinedPixels;
+  P.drawPixelOutline = drawPixelOutline;
 })(window.Pixelator = window.Pixelator || {});
 
 // ---- pixelate.js ----
@@ -1007,45 +1157,171 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
   P.extractAdaptivePalette = extractAdaptivePalette;
 })(window.Pixelator = window.Pixelator || {});
 
-// ---- gif-metadata.js ----
+// ---- gif-decoder.js ----
 (function (P) {
   "use strict";
 
-  const DEFAULT_FRAME_DELAY_CS = 10;
+  const DEFAULT_DELAY_MS = 100;
+  const MAX_CANVAS_PIXELS = 16_777_216;
+  const MAX_FRAME_PIXELS = 128_000_000;
 
   function readUint16(bytes, offset) {
     return bytes[offset] | (bytes[offset + 1] << 8);
   }
 
-  function skipSubBlocks(bytes, start) {
+  function readColorTable(bytes, offset, size) {
+    if (offset + size * 3 > bytes.length) throw new Error("GIF 색상표가 손상되었습니다.");
+    const colors = new Array(size);
+    for (let index = 0; index < size; index += 1) {
+      const cursor = offset + index * 3;
+      colors[index] = [bytes[cursor], bytes[cursor + 1], bytes[cursor + 2]];
+    }
+    return { colors, offset: offset + size * 3 };
+  }
+
+  function readSubBlocks(bytes, start) {
+    const chunks = [];
+    let total = 0;
     let offset = start;
     while (offset < bytes.length) {
       const size = bytes[offset];
       offset += 1;
-      if (size === 0) return offset;
+      if (size === 0) break;
+      if (offset + size > bytes.length) throw new Error("GIF 데이터 블록이 손상되었습니다.");
+      chunks.push(bytes.subarray(offset, offset + size));
+      total += size;
       offset += size;
     }
-    return bytes.length;
+    const data = new Uint8Array(total);
+    let cursor = 0;
+    for (const chunk of chunks) {
+      data.set(chunk, cursor);
+      cursor += chunk.length;
+    }
+    return { data, offset };
   }
 
-  function normalizeDelay(delayCs) {
-    return delayCs <= 1 ? DEFAULT_FRAME_DELAY_CS : delayCs;
+  function decodeLzw(minCodeSize, data, pixelCount) {
+    if (minCodeSize < 2 || minCodeSize > 8) throw new Error("지원되지 않는 GIF LZW 코드 크기입니다.");
+    const clearCode = 1 << minCodeSize;
+    const endCode = clearCode + 1;
+    const prefix = new Uint16Array(4096);
+    const suffix = new Uint8Array(4096);
+    const stack = new Uint8Array(4097);
+    const pixels = new Uint8Array(pixelCount);
+    for (let index = 0; index < clearCode; index += 1) suffix[index] = index;
+
+    let available = clearCode + 2;
+    let oldCode = -1;
+    let codeSize = minCodeSize + 1;
+    let codeMask = (1 << codeSize) - 1;
+    let datum = 0;
+    let bits = 0;
+    let dataIndex = 0;
+    let pixelIndex = 0;
+    let stackSize = 0;
+    let first = 0;
+
+    while (pixelIndex < pixelCount) {
+      if (stackSize === 0) {
+        while (bits < codeSize) {
+          if (dataIndex >= data.length) return pixels;
+          datum |= data[dataIndex] << bits;
+          bits += 8;
+          dataIndex += 1;
+        }
+
+        let code = datum & codeMask;
+        datum >>>= codeSize;
+        bits -= codeSize;
+        if (code === clearCode) {
+          codeSize = minCodeSize + 1;
+          codeMask = (1 << codeSize) - 1;
+          available = clearCode + 2;
+          oldCode = -1;
+          continue;
+        }
+        if (code === endCode) break;
+        if (oldCode < 0) {
+          pixels[pixelIndex] = suffix[code];
+          pixelIndex += 1;
+          first = code;
+          oldCode = code;
+          continue;
+        }
+
+        const inputCode = code;
+        if (code >= available) {
+          stack[stackSize] = first;
+          stackSize += 1;
+          code = oldCode;
+        }
+        let guard = 0;
+        while (code >= clearCode && guard < 4096) {
+          stack[stackSize] = suffix[code];
+          stackSize += 1;
+          code = prefix[code];
+          guard += 1;
+        }
+        first = suffix[code];
+        stack[stackSize] = first;
+        stackSize += 1;
+
+        if (available < 4096) {
+          prefix[available] = oldCode;
+          suffix[available] = first;
+          available += 1;
+          if ((available & codeMask) === 0 && available < 4096) {
+            codeSize += 1;
+            codeMask = (1 << codeSize) - 1;
+          }
+        }
+        oldCode = inputCode;
+      }
+
+      stackSize -= 1;
+      pixels[pixelIndex] = stack[stackSize];
+      pixelIndex += 1;
+    }
+    return pixels;
   }
 
-  function parseGifMetadata(arrayBuffer) {
+  function deinterlace(indices, width, height) {
+    const result = new Uint8Array(indices.length);
+    const starts = [0, 4, 2, 1];
+    const steps = [8, 8, 4, 2];
+    let sourceRow = 0;
+    for (let pass = 0; pass < 4; pass += 1) {
+      for (let targetRow = starts[pass]; targetRow < height; targetRow += steps[pass]) {
+        result.set(indices.subarray(sourceRow * width, (sourceRow + 1) * width), targetRow * width);
+        sourceRow += 1;
+      }
+    }
+    return result;
+  }
+
+  function decodeGif(arrayBuffer) {
     const bytes = new Uint8Array(arrayBuffer);
     if (bytes.length < 13) throw new Error("GIF 헤더가 너무 짧습니다.");
-    const signature = String.fromCharCode(...bytes.slice(0, 6));
+    const signature = String.fromCharCode(...bytes.subarray(0, 6));
     if (signature !== "GIF87a" && signature !== "GIF89a") throw new Error("유효한 GIF 파일이 아닙니다.");
 
-    const logicalScreenPacked = bytes[10];
-    const hasGlobalColorTable = Boolean(logicalScreenPacked & 0x80);
-    const globalColorTableSize = hasGlobalColorTable ? 3 * (2 ** ((logicalScreenPacked & 0x07) + 1)) : 0;
-    let offset = 13 + globalColorTableSize;
-    let pendingDelayCs = null;
-    let durationCs = 0;
-    let frameCount = 0;
+    const width = readUint16(bytes, 6);
+    const height = readUint16(bytes, 8);
+    if (!width || !height || width * height > MAX_CANVAS_PIXELS) throw new Error("GIF 해상도가 너무 큽니다.");
+    const screenPacked = bytes[10];
+    const backgroundIndex = bytes[11];
+    let offset = 13;
+    let globalPalette = null;
+    if (screenPacked & 0x80) {
+      const table = readColorTable(bytes, offset, 1 << ((screenPacked & 0x07) + 1));
+      globalPalette = table.colors;
+      offset = table.offset;
+    }
 
+    const frames = [];
+    let totalFramePixels = 0;
+    let graphicControl = { delayMs: DEFAULT_DELAY_MS, disposal: 0, transparentIndex: null };
     while (offset < bytes.length) {
       const marker = bytes[offset];
       if (marker === 0x3b) break;
@@ -1053,44 +1329,201 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       if (marker === 0x21) {
         const label = bytes[offset + 1];
         if (label === 0xf9 && bytes[offset + 2] >= 4 && offset + 7 < bytes.length) {
-          pendingDelayCs = normalizeDelay(readUint16(bytes, offset + 4));
+          const packed = bytes[offset + 3];
+          const delayCs = readUint16(bytes, offset + 4);
+          graphicControl = {
+            delayMs: delayCs <= 1 ? DEFAULT_DELAY_MS : delayCs * 10,
+            disposal: (packed >> 2) & 0x07,
+            transparentIndex: packed & 0x01 ? bytes[offset + 6] : null
+          };
           offset += 3 + bytes[offset + 2] + 1;
         } else {
-          offset = skipSubBlocks(bytes, offset + 2);
+          offset = readSubBlocks(bytes, offset + 2).offset;
         }
         continue;
       }
 
       if (marker === 0x2c && offset + 9 < bytes.length) {
-        frameCount += 1;
-        durationCs += pendingDelayCs ?? DEFAULT_FRAME_DELAY_CS;
-        pendingDelayCs = null;
-
+        const left = readUint16(bytes, offset + 1);
+        const top = readUint16(bytes, offset + 3);
+        const frameWidth = readUint16(bytes, offset + 5);
+        const frameHeight = readUint16(bytes, offset + 7);
         const imagePacked = bytes[offset + 9];
-        const hasLocalColorTable = Boolean(imagePacked & 0x80);
-        const localColorTableSize = hasLocalColorTable ? 3 * (2 ** ((imagePacked & 0x07) + 1)) : 0;
-        offset += 10 + localColorTableSize;
-        if (offset >= bytes.length) break;
+        if (!frameWidth || !frameHeight || left + frameWidth > width || top + frameHeight > height) {
+          throw new Error("GIF 프레임 영역이 손상되었습니다.");
+        }
+        totalFramePixels += frameWidth * frameHeight;
+        if (totalFramePixels > MAX_FRAME_PIXELS) throw new Error("GIF 프레임 데이터가 너무 큽니다.");
+
+        offset += 10;
+        let palette = globalPalette;
+        if (imagePacked & 0x80) {
+          const table = readColorTable(bytes, offset, 1 << ((imagePacked & 0x07) + 1));
+          palette = table.colors;
+          offset = table.offset;
+        }
+        if (!palette) throw new Error("GIF 프레임에 색상표가 없습니다.");
+        const minCodeSize = bytes[offset];
         offset += 1;
-        offset = skipSubBlocks(bytes, offset);
+        const blocks = readSubBlocks(bytes, offset);
+        offset = blocks.offset;
+        let indices = decodeLzw(minCodeSize, blocks.data, frameWidth * frameHeight);
+        if (imagePacked & 0x40) indices = deinterlace(indices, frameWidth, frameHeight);
+        frames.push({
+          left,
+          top,
+          width: frameWidth,
+          height: frameHeight,
+          palette,
+          indices,
+          delayMs: graphicControl.delayMs,
+          disposal: graphicControl.disposal,
+          transparentIndex: graphicControl.transparentIndex
+        });
+        graphicControl = { delayMs: DEFAULT_DELAY_MS, disposal: 0, transparentIndex: null };
         continue;
       }
-
       offset += 1;
     }
 
+    if (!frames.length) throw new Error("GIF에서 표시할 프레임을 찾지 못했습니다.");
+    const transparent = frames.some((frame) => frame.transparentIndex !== null);
+    const backgroundColor = !transparent && globalPalette && globalPalette[backgroundIndex]
+      ? [...globalPalette[backgroundIndex], 255]
+      : [0, 0, 0, 0];
     return {
-      duration: frameCount ? durationCs / 100 : 0,
-      frameCount
+      width,
+      height,
+      frames,
+      frameCount: frames.length,
+      duration: frames.reduce((total, frame) => total + frame.delayMs, 0) / 1000,
+      hasTransparency: transparent,
+      backgroundColor
     };
   }
 
-  async function readGifMetadata(file) {
-    return parseGifMetadata(await file.arrayBuffer());
+  class GifPlayer {
+    constructor(decoded) {
+      this.width = decoded.width;
+      this.height = decoded.height;
+      this.frames = decoded.frames;
+      this.duration = decoded.duration;
+      this.frameCount = decoded.frameCount;
+      this.hasTransparency = decoded.hasTransparency;
+      this.backgroundColor = decoded.backgroundColor;
+      this.canvas = document.createElement("canvas");
+      this.canvas.width = this.width;
+      this.canvas.height = this.height;
+      this.context = this.canvas.getContext("2d", { alpha: true });
+      this.imageData = this.context.createImageData(this.width, this.height);
+      this.screen = new Uint8ClampedArray(this.width * this.height * 4);
+      this.currentIndex = 0;
+      this.previousFrame = null;
+      this.previousRestore = null;
+      this.playing = false;
+      this.timer = 0;
+      this.renderFrame(0);
+    }
+
+    static async fromFile(file) {
+      return new GifPlayer(decodeGif(await file.arrayBuffer()));
+    }
+
+    fillScreen(color) {
+      for (let index = 0; index < this.screen.length; index += 4) {
+        this.screen[index] = color[0];
+        this.screen[index + 1] = color[1];
+        this.screen[index + 2] = color[2];
+        this.screen[index + 3] = color[3];
+      }
+    }
+
+    clearFrameArea(frame) {
+      for (let y = 0; y < frame.height; y += 1) {
+        for (let x = 0; x < frame.width; x += 1) {
+          const target = ((frame.top + y) * this.width + frame.left + x) * 4;
+          this.screen[target] = this.backgroundColor[0];
+          this.screen[target + 1] = this.backgroundColor[1];
+          this.screen[target + 2] = this.backgroundColor[2];
+          this.screen[target + 3] = this.backgroundColor[3];
+        }
+      }
+    }
+
+    resetScreen() {
+      this.fillScreen(this.backgroundColor);
+      this.previousFrame = null;
+      this.previousRestore = null;
+    }
+
+    renderFrame(index) {
+      if (index === 0) this.resetScreen();
+      else if (this.previousFrame) {
+        if (this.previousFrame.disposal === 2) this.clearFrameArea(this.previousFrame);
+        else if (this.previousFrame.disposal === 3 && this.previousRestore) this.screen.set(this.previousRestore);
+      }
+
+      const frame = this.frames[index];
+      const restore = frame.disposal === 3 ? this.screen.slice() : null;
+      for (let y = 0; y < frame.height; y += 1) {
+        for (let x = 0; x < frame.width; x += 1) {
+          const source = y * frame.width + x;
+          const colorIndex = frame.indices[source];
+          if (colorIndex === frame.transparentIndex) continue;
+          const color = frame.palette[colorIndex];
+          if (!color) continue;
+          const target = ((frame.top + y) * this.width + frame.left + x) * 4;
+          this.screen[target] = color[0];
+          this.screen[target + 1] = color[1];
+          this.screen[target + 2] = color[2];
+          this.screen[target + 3] = 255;
+        }
+      }
+      this.imageData.data.set(this.screen);
+      this.context.putImageData(this.imageData, 0, 0);
+      this.currentIndex = index;
+      this.previousFrame = frame;
+      this.previousRestore = restore;
+    }
+
+    scheduleNext() {
+      if (!this.playing) return;
+      const delay = this.frames[this.currentIndex].delayMs;
+      this.timer = window.setTimeout(() => {
+        if (!this.playing) return;
+        this.renderFrame((this.currentIndex + 1) % this.frames.length);
+        this.scheduleNext();
+      }, delay);
+    }
+
+    play() {
+      if (this.playing) return;
+      this.playing = true;
+      this.scheduleNext();
+    }
+
+    pause() {
+      this.playing = false;
+      window.clearTimeout(this.timer);
+      this.timer = 0;
+    }
+
+    restart() {
+      this.pause();
+      this.renderFrame(0);
+    }
+
+    dispose() {
+      this.pause();
+      this.canvas.width = 0;
+      this.canvas.height = 0;
+      this.frames = [];
+      this.screen = new Uint8ClampedArray(0);
+    }
   }
 
-  P.parseGifMetadata = parseGifMetadata;
-  P.readGifMetadata = readGifMetadata;
+  P.decodeGif = decodeGif;
+  P.GifPlayer = GifPlayer;
 })(window.Pixelator = window.Pixelator || {});
 
 // ---- media.js ----
@@ -1108,15 +1541,18 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       this.objectUrl = null;
       this.info = null;
       this.playing = false;
+      this.gifPlayer = null;
     }
 
     dispose() {
+      if (this.gifPlayer) this.gifPlayer.dispose();
       if (this.element && this.element.tagName === "VIDEO") {
         this.element.pause();
         this.element.removeAttribute("src");
         this.element.load();
       }
       if (this.objectUrl) URL.revokeObjectURL(this.objectUrl);
+      this.gifPlayer = null;
       this.element = null;
       this.objectUrl = null;
       this.info = null;
@@ -1129,34 +1565,50 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       }
       this.dispose();
       this.objectUrl = URL.createObjectURL(file);
-      return file.type.startsWith("video/") ? this.loadVideo(file) : this.loadImage(file);
+      if (file.type.startsWith("video/")) return this.loadVideo(file);
+      if (file.type === "image/gif" || /\.gif$/i.test(file.name)) return this.loadGif(file);
+      return this.loadImage(file);
+    }
+
+    async loadGif(file) {
+      try {
+        this.gifPlayer = await P.GifPlayer.fromFile(file);
+      } catch (error) {
+        throw new Error("GIF 프레임을 해석하지 못했습니다: " + error.message);
+      }
+      this.element = this.gifPlayer.canvas;
+      this.playing = true;
+      this.info = {
+        file,
+        name: file.name,
+        kind: "gif",
+        dynamic: true,
+        width: this.gifPlayer.width,
+        height: this.gifPlayer.height,
+        duration: this.gifPlayer.duration,
+        frameCount: this.gifPlayer.frameCount,
+        hasTransparency: this.gifPlayer.hasTransparency
+      };
+      this.gifPlayer.play();
+      emit(this, "loaded", this.info);
+      return this.info;
     }
 
     loadImage(file) {
       return new Promise((resolve, reject) => {
         const image = new Image();
         image.decoding = "async";
-        image.onload = async () => {
-          const dynamic = file.type === "image/gif" || /\.gif$/i.test(file.name);
-          let gifMetadata = { duration: 0, frameCount: 0 };
-          if (dynamic) {
-            try {
-              gifMetadata = await P.readGifMetadata(file);
-            } catch (error) {
-              console.warn("GIF metadata could not be read", error);
-            }
-          }
+        image.onload = () => {
           this.element = image;
-          this.playing = dynamic;
+          this.playing = false;
           this.info = {
             file,
             name: file.name,
-            kind: dynamic ? "gif" : "image",
-            dynamic,
+            kind: "image",
+            dynamic: false,
             width: image.naturalWidth,
             height: image.naturalHeight,
-            duration: gifMetadata.duration,
-            frameCount: gifMetadata.frameCount
+            duration: 0
           };
           emit(this, "loaded", this.info);
           resolve(this.info);
@@ -1172,7 +1624,7 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
         video.preload = "auto";
         video.playsInline = true;
         video.muted = true;
-        video.addEventListener("loadedmetadata", () => {
+        video.addEventListener("loadeddata", () => {
           this.element = video;
           this.playing = false;
           this.info = {
@@ -1209,6 +1661,7 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       if (!this.info || !this.info.dynamic) return;
       if (this.info.kind === "video") await this.element.play();
       else {
+        this.gifPlayer.play();
         this.playing = true;
         emit(this, "playback", { playing: true });
       }
@@ -1218,6 +1671,7 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       if (!this.info || !this.info.dynamic) return;
       if (this.info.kind === "video") this.element.pause();
       else {
+        this.gifPlayer.pause();
         this.playing = false;
         emit(this, "playback", { playing: false });
       }
@@ -1258,27 +1712,16 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       });
     }
 
-    loadFreshGifFrame() {
-      return new Promise((resolve, reject) => {
-        const image = new Image();
-        image.decoding = "async";
-        image.onload = () => {
-          this.element = image;
-          emit(this, "framechange", { current: 0, duration: this.info.duration });
-          resolve();
-        };
-        image.onerror = () => reject(new Error("GIF를 처음부터 다시 불러오지 못했습니다."));
-        image.src = this.objectUrl;
-      });
-    }
-
     async prepareFullRecording() {
       if (!this.info || !this.info.dynamic || !this.info.duration) {
         throw new Error("미디어의 전체 재생 길이를 확인할 수 없습니다.");
       }
       this.pause();
       if (this.info.kind === "video") await this.seekTo(0);
-      else await this.loadFreshGifFrame();
+      else {
+        this.gifPlayer.restart();
+        emit(this, "framechange", { current: 0, duration: this.info.duration });
+      }
     }
 
     waitForVideoEnd() {
@@ -1330,9 +1773,15 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       this.boundTick = this.tick.bind(this);
 
       this.adaptivePaletteCache = null;
+      this.transparencyState = null;
+      this.transparencyChecks = 0;
       state.addEventListener("configchange", () => this.requestRender());
-      media.addEventListener("loaded", () => {
+      media.addEventListener("loaded", (event) => {
         this.adaptivePaletteCache = null;
+        this.transparencyChecks = 0;
+        this.transparencyState = typeof event.detail.hasTransparency === "boolean"
+          ? event.detail.hasTransparency
+          : null;
         this.requestRender();
       });
       media.addEventListener("framechange", () => this.requestRender());
@@ -1345,6 +1794,12 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
     }
 
     requestRender() { this.dirty = true; }
+
+    setTransparency(hasTransparency) {
+      if (this.transparencyState === hasTransparency) return;
+      this.transparencyState = hasTransparency;
+      this.dispatchEvent(new CustomEvent("transparencychange", { detail: { hasTransparency } }));
+    }
 
     tick(timestamp) {
       if (!this.running) return;
@@ -1379,11 +1834,6 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
         lowWidth = Math.max(1, Math.round(lowWidth / oversizedRatio));
         lowHeight = Math.max(1, Math.round(lowHeight / oversizedRatio));
       }
-      const requestedScale = Math.max(1, Math.min(8, Math.round(config.outputScale)));
-      const safeScale = Math.max(1, Math.floor(maxOutputDimension / Math.max(lowWidth, lowHeight)));
-      const scale = Math.min(requestedScale, safeScale);
-      const outputWidth = lowWidth * scale;
-      const outputHeight = lowHeight * scale;
 
       if (this.workCanvas.width !== lowWidth || this.workCanvas.height !== lowHeight) {
         this.workCanvas.width = lowWidth;
@@ -1409,11 +1859,35 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
         }
         palette = this.adaptivePaletteCache.colors;
       }
+
+      const videoFrameReady = info.kind !== "video" || source.readyState >= 2;
+      const shouldInspectTransparency = videoFrameReady && (this.transparencyState === null || (
+        info.kind === "video" && this.transparencyState === false && this.transparencyChecks < 30
+      ));
+      if (shouldInspectTransparency) {
+        imageData = imageData || this.workContext.getImageData(0, 0, lowWidth, lowHeight);
+        this.transparencyChecks += 1;
+        const detected = P.hasTransparency(imageData);
+        if (detected || this.transparencyState === null) this.setTransparency(detected);
+      }
+      const sourceHasTransparency = this.transparencyState === true;
+
       if (palette && palette.length >= 2) {
         imageData = imageData || this.workContext.getImageData(0, 0, lowWidth, lowHeight);
         P.applyPalette(imageData, lowWidth, lowHeight, palette, config.dither);
         this.workContext.putImageData(imageData, 0, 0);
       }
+
+      const outlineThickness = sourceHasTransparency
+        ? Math.max(0, Math.min(8, Math.round(Number(config.outlineThickness) || 0)))
+        : 0;
+      const requestedScale = Math.max(1, Math.min(8, Math.round(config.outputScale)));
+      const safeScale = Math.max(1, Math.floor((maxOutputDimension - outlineThickness * 2) / Math.max(lowWidth, lowHeight)));
+      const scale = Math.min(requestedScale, safeScale);
+      const baseWidth = lowWidth * scale;
+      const baseHeight = lowHeight * scale;
+      const outputWidth = baseWidth + outlineThickness * 2;
+      const outputHeight = baseHeight + outlineThickness * 2;
 
       if (this.canvas.width !== outputWidth || this.canvas.height !== outputHeight) {
         this.canvas.width = outputWidth;
@@ -1421,10 +1895,17 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       }
       this.context.clearRect(0, 0, outputWidth, outputHeight);
       this.context.imageSmoothingEnabled = false;
-      this.context.drawImage(this.workCanvas, 0, 0, outputWidth, outputHeight);
+      if (outlineThickness > 0) {
+        const themeColor = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
+        const outlineColor = P.hexToRgb(config.outlineColorMode === "custom" ? config.outlineColor : themeColor) || [21, 21, 21];
+        P.drawPixelOutline(this.context, this.workCanvas, baseWidth, baseHeight, outlineColor, outlineThickness);
+      } else {
+        this.context.drawImage(this.workCanvas, 0, 0, baseWidth, baseHeight);
+      }
       this.dispatchEvent(new CustomEvent("rendered", {
         detail: {
           lowWidth, lowHeight, outputWidth, outputHeight, scale, requestedScale,
+          outlineThickness,
           paletteColors: palette ? palette.map(P.rgbToHex) : []
         }
       }));
@@ -1564,12 +2045,15 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
         customWidth: byId("customWidth"), samplingMode: byId("samplingMode"), outputScale: byId("outputScale"),
         paletteSelect: byId("paletteSelect"), paletteStrip: byId("paletteStrip"), customPaletteBox: byId("customPaletteBox"),
         customPalette: byId("customPalette"), paletteHelp: byId("paletteHelp"), ditherMode: byId("ditherMode"),
-        renderFps: byId("renderFps"), downloadPng: byId("downloadPng"),
+        outlineSection: byId("outlineSection"), animationSection: byId("animationSection"),
+        outlineColorMode: byId("outlineColorMode"), outlineColor: byId("outlineColor"),
+        outlineThickness: byId("outlineThickness"), renderFps: byId("renderFps"), downloadPng: byId("downloadPng"),
         recordWebm: byId("recordWebm"), resetSettings: byId("resetSettings"), settingsFieldset: byId("settingsFieldset"),
         statusMessage: byId("statusMessage"), recordProgress: byId("recordProgress"), recordProgressBar: byId("recordProgressBar")
       };
       this.bindEvents();
       this.writeConfig(state.config);
+      this.updateSectionNumbers();
     }
 
     bindEvents() {
@@ -1590,9 +2074,13 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
         if (r.resolutionPreset.value !== "custom") r.customWidth.value = r.resolutionPreset.value;
         this.readConfig();
       });
-      [r.customWidth, r.customPalette].forEach((element) => element.addEventListener("input", () => this.readConfig()));
+      [r.customWidth, r.customPalette, r.outlineColor, r.outlineThickness].forEach((element) => element.addEventListener("input", () => this.readConfig()));
       [r.samplingMode, r.outputScale, r.paletteSelect, r.ditherMode, r.renderFps].forEach((element) => {
         element.addEventListener("change", () => this.readConfig());
+      });
+      r.outlineColorMode.addEventListener("change", () => {
+        this.updateOutlineUI();
+        this.readConfig();
       });
       r.paletteSelect.addEventListener("change", () => this.updatePaletteUI());
       r.playButton.addEventListener("click", () => this.media.toggle().catch((error) => this.setStatus(error.message, "error")));
@@ -1609,6 +2097,10 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       this.media.addEventListener("playback", (event) => this.updatePlayback(event.detail.playing));
       this.media.addEventListener("timeupdate", (event) => this.updateTimeline(event.detail));
       this.renderer.addEventListener("rendered", (event) => this.onRendered(event.detail));
+      this.renderer.addEventListener("transparencychange", (event) => {
+        this.refs.outlineSection.hidden = !event.detail.hasTransparency;
+        this.updateSectionNumbers();
+      });
       this.renderer.addEventListener("rendererror", (event) => this.setStatus("렌더링 오류: " + event.detail.message, "error"));
     }
 
@@ -1642,6 +2134,9 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       r.playButton.disabled = !info.dynamic;
       r.timeline.disabled = info.kind !== "video";
       r.timeline.value = "0";
+      r.animationSection.hidden = !info.dynamic;
+      r.outlineSection.hidden = info.hasTransparency !== true;
+      this.updateSectionNumbers();
       this.updatePlayback(this.media.playing);
       this.updateTimeline({ current: 0, duration: info.duration });
       if (info.dynamic && !info.duration) this.setStatus("재생 길이를 읽지 못해 전체 WebM 녹화를 사용할 수 없습니다.", "error");
@@ -1674,6 +2169,9 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
         palette: r.paletteSelect.value,
         customPalette: r.customPalette.value,
         dither: r.ditherMode.value,
+        outlineColorMode: r.outlineColorMode.value,
+        outlineColor: r.outlineColor.value,
+        outlineThickness: Math.max(0, Math.min(8, Math.round(Number(r.outlineThickness.value) || 0))),
         fps: Number(r.renderFps.value)
       });
       this.updatePaletteUI();
@@ -1689,8 +2187,24 @@ select:disabled, input:disabled { color: #777772; background: #d7d7d1; border-co
       r.paletteSelect.value = config.palette;
       r.customPalette.value = config.customPalette;
       r.ditherMode.value = config.dither;
+      r.outlineColorMode.value = config.outlineColorMode;
+      r.outlineColor.value = config.outlineColor;
+      r.outlineThickness.value = String(config.outlineThickness);
       r.renderFps.value = String(config.fps);
       this.updatePaletteUI();
+      this.updateOutlineUI();
+    }
+
+    updateOutlineUI() {
+      this.refs.outlineColor.disabled = this.refs.outlineColorMode.value !== "custom";
+    }
+
+    updateSectionNumbers() {
+      const sections = [...document.querySelectorAll(".control-section:not([hidden])")];
+      sections.forEach((section, index) => {
+        const number = section.querySelector(".step-number");
+        if (number) number.textContent = String(index + 1).padStart(2, "0");
+      });
     }
 
     updatePaletteUI() {
