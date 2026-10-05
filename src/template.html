@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="이미지, GIF, 영상을 해상도와 팔레트에 맞춰 픽셀 아트로 변환하는 오프라인 도구">
+  <title>Pixelator — 미디어 픽셀 변환기</title>
+  <style>
+/*__PIXELATOR_STYLES__*/
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Pixelator 처음으로">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span>PIXELATOR</span>
+      </a>
+      <p class="tagline">MEDIA → PIXEL ART</p>
+    </header>
+
+    <main class="workspace">
+      <section class="preview-panel" aria-label="미리보기">
+        <div class="panel-heading">
+          <div>
+            <h1>픽셀 미리보기</h1>
+          </div>
+          <div class="file-meta" id="fileMeta" hidden>
+            <strong id="fileName">—</strong>
+            <span id="fileDetails">—</span>
+          </div>
+        </div>
+
+        <div class="canvas-stage" id="dropZone">
+          <div class="checkerboard" aria-hidden="true"></div>
+          <div class="preview-canvases" id="previewCanvases" hidden>
+            <div class="preview-pane original-pane" id="originalPane" hidden>
+              <span class="preview-label">ORIGINAL</span>
+              <canvas id="originalCanvas" aria-label="원본 미디어" hidden></canvas>
+            </div>
+            <div class="preview-pane result-pane">
+              <span class="preview-label">RESULT</span>
+              <canvas id="outputCanvas" aria-label="픽셀화 결과" hidden></canvas>
+            </div>
+            <div class="compare-divider" id="compareDivider" aria-hidden="true" hidden>
+              <span>↔</span>
+            </div>
+            <input class="compare-slider" id="compareSlider" type="range" min="0" max="100" value="50" aria-label="원본과 결과 분할 위치" hidden>
+          </div>
+          <div class="empty-state" id="emptyState">
+            <div class="empty-icon" aria-hidden="true">
+              <span></span><span></span><span></span><span></span>
+            </div>
+            <h2>미디어를 여기에 놓으세요</h2>
+            <p>이미지, GIF, 영상을 브라우저 안에서 바로 변환합니다.</p>
+            <label class="button button-primary" for="fileInput">파일 선택</label>
+            <span class="format-note">PNG · JPG · WEBP · GIF · MP4 · WEBM</span>
+          </div>
+          <div class="drop-overlay" id="dropOverlay" aria-hidden="true">
+            <strong>놓아서 불러오기</strong>
+          </div>
+        </div>
+
+        <div class="media-bar" id="mediaBar">
+          <button class="icon-button" id="playButton" type="button" aria-label="재생" disabled>
+            <span id="playIcon" aria-hidden="true">▶</span>
+          </button>
+          <input id="timeline" class="timeline" type="range" min="0" max="1000" value="0" aria-label="미디어 재생 위치" disabled>
+          <span class="timecode" id="timecode">00:00 / 00:00</span>
+          <button class="bar-button" id="compareButton" type="button" aria-pressed="false" disabled>원본 비교</button>
+          <span class="render-stats" id="renderStats">— PX</span>
+        </div>
+      </section>
+
+      <aside class="control-panel" aria-label="픽셀화 설정">
+        <div class="control-header">
+          <div>
+            <h2>변환 설정</h2>
+          </div>
+          <label class="button button-ghost button-small" for="fileInput">미디어 교체</label>
+          <input id="fileInput" type="file" accept="image/*,video/*" hidden>
+        </div>
+
+        <fieldset id="settingsFieldset">
+          <section class="control-section">
+            <div class="section-title">
+              <span class="step-number">01</span>
+              <h3>픽셀 해상도</h3>
+            </div>
+            <label class="field-label" for="resolutionPreset">가로 픽셀 수</label>
+            <div class="input-row">
+              <select id="resolutionPreset">
+                <option value="32">32 px</option>
+                <option value="48">48 px</option>
+                <option value="64">64 px</option>
+                <option value="96" selected>96 px</option>
+                <option value="128">128 px</option>
+                <option value="192">192 px</option>
+                <option value="256">256 px</option>
+                <option value="custom">직접 입력</option>
+              </select>
+              <div class="number-unit">
+                <input id="customWidth" type="number" min="8" max="512" value="96" aria-label="직접 입력할 가로 픽셀 수" disabled>
+                <span>PX</span>
+              </div>
+            </div>
+            <p class="field-help">세로 크기는 원본 비율에 맞춰 자동 계산됩니다.</p>
+
+            <div class="two-columns">
+              <label>
+                <span class="field-label">축소 샘플링</span>
+                <select id="samplingMode">
+                  <option value="smooth" selected>영역 평균</option>
+                  <option value="nearest">최근접 픽셀</option>
+                </select>
+              </label>
+              <label>
+                <span class="field-label">내보내기 배율</span>
+                <select id="outputScale">
+                  <option value="1">1×</option>
+                  <option value="2">2×</option>
+                  <option value="4" selected>4×</option>
+                  <option value="6">6×</option>
+                  <option value="8">8×</option>
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section class="control-section">
+            <div class="section-title">
+              <span class="step-number">02</span>
+              <h3>컬러 팔레트</h3>
+            </div>
+            <label class="field-label" for="paletteSelect">팔레트</label>
+            <select id="paletteSelect">
+              <option value="original" selected>원본 색상</option>
+              <option value="adaptive8">Adaptive · 원본 기반 8색</option>
+              <option value="adaptive16">Adaptive · 원본 기반 16색</option>
+              <option value="adaptive32">Adaptive · 원본 기반 32색</option>
+              <option value="mono">Mono · 2색</option>
+              <option value="gameboy">Game Boy · 4색</option>
+              <option value="gray8">Grayscale · 8색</option>
+              <option value="pico8">PICO-8 · 16색</option>
+              <option value="cga16">CGA · 16색</option>
+              <option value="custom">사용자 팔레트</option>
+            </select>
+            <div class="palette-strip" id="paletteStrip" aria-label="선택된 팔레트 미리보기"></div>
+            <div class="custom-palette" id="customPaletteBox" hidden>
+              <label class="field-label" for="customPalette">HEX 색상 (2–32개)</label>
+              <textarea id="customPalette" rows="3" spellcheck="false">#17111A #F7F1E3 #FF5252 #33D9B2 #34ACE0</textarea>
+              <p class="field-help" id="paletteHelp">공백, 쉼표 또는 줄바꿈으로 구분하세요.</p>
+            </div>
+
+            <label class="field-label field-spaced" for="ditherMode">디더링</label>
+            <select id="ditherMode">
+              <option value="auto" selected>자동 · 팔레트별 최적화</option>
+              <option value="none">없음 · 선명한 면</option>
+              <option value="ordered">Ordered 4×4 · 규칙 패턴</option>
+              <option value="floyd">Floyd–Steinberg · 자연스러운 혼합</option>
+            </select>
+          </section>
+
+          <div class="conditional-sections">
+            <section class="control-section compact-section" id="outlineSection" hidden>
+              <div class="section-title">
+                <span class="step-number">03</span>
+                <h3>테두리</h3>
+              </div>
+              <div class="outline-controls">
+                <label>
+                  <span class="field-label">색상</span>
+                  <select id="outlineColorMode">
+                    <option value="theme" selected>테마 자동</option>
+                    <option value="custom">직접 선택</option>
+                  </select>
+                </label>
+                <label>
+                  <span class="field-label">직접 선택</span>
+                  <input id="outlineColor" type="color" value="#151515" aria-label="테두리 색상" disabled>
+                </label>
+                <label>
+                  <span class="field-label">두께</span>
+                  <div class="number-unit">
+                    <input id="outlineThickness" type="number" min="0" max="8" step="1" value="1">
+                    <span>PX</span>
+                  </div>
+                </label>
+              </div>
+              <p class="field-help">투명 영역과 맞닿은 바깥쪽에 적용합니다. 0은 테두리 없음입니다.</p>
+            </section>
+
+            <section class="control-section compact-section" id="animationSection" hidden>
+              <div class="section-title">
+                <span class="step-number">03</span>
+                <h3>애니메이션</h3>
+              </div>
+              <label>
+                <span class="field-label">처리 FPS</span>
+                <select id="renderFps">
+                  <option value="12">12 FPS</option>
+                  <option value="24" selected>24 FPS</option>
+                  <option value="30">30 FPS</option>
+                </select>
+              </label>
+              <p class="field-help">GIF는 빠르게 인코딩하며, 영상은 실제 길이만큼 녹화합니다. 오디오는 포함하지 않습니다.</p>
+            </section>
+          </div>
+        </fieldset>
+
+        <div class="actions">
+          <button class="button button-primary action-main" id="downloadPng" type="button" disabled>
+            <span aria-hidden="true">↓</span> PNG 저장
+          </button>
+          <button class="button button-secondary action-main" id="recordWebm" type="button" disabled>
+            <span aria-hidden="true">●</span> 전체 WebM 녹화
+          </button>
+          <button class="text-button" id="resetSettings" type="button">설정 초기화</button>
+        </div>
+        <div class="progress" id="recordProgress" hidden>
+          <div id="recordProgressBar"></div>
+        </div>
+        <p class="status-message" id="statusMessage" role="status" aria-live="polite">파일을 선택하면 바로 시작됩니다.</p>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+/*__PIXELATOR_SCRIPTS__*/
+  </script>
+</body>
+</html>

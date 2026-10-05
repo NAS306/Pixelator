@@ -11,12 +11,16 @@ const scriptFiles = [
   "state.js",
   "palettes.js",
   "color-space.js",
+  "outline.js",
   "pixelate.js",
   "adaptive-palette.js",
-  "gif-metadata.js",
+  "gif-decoder.js",
   "media.js",
   "renderer.js",
+  "webm-muxer.js",
+  "webcodecs-encoder.js",
   "exporter.js",
+  "fast-gif-exporter.js",
   "ui.js",
   "app.js"
 ];

@@ -1,0 +1,5 @@
+# Local backup snapshots created before editing/building
+*_BU.*
+node_modules/
+.DS_Store
+Thumbs.db
